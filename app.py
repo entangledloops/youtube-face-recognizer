@@ -26,6 +26,8 @@ def detect_face_in_video(video_path, reference_encoding, frame_skip=30, threshol
     video = cv2.VideoCapture(video_path)
     frame_count = 0
     face_found = False
+    match_frame = None
+    match_distance = None
     
     print(f"Starting video analysis with threshold: {threshold}")
 
@@ -60,8 +62,10 @@ def detect_face_in_video(video_path, reference_encoding, frame_skip=30, threshol
                         if matches[0] or distance < threshold:
                             print(f"Match found at frame {frame_count} with distance {distance}")
                             face_found = True
+                            match_frame = frame_count
+                            match_distance = float(distance)
                             video.release()
-                            return True
+                            return face_found, match_frame, match_distance
                 
             except Exception as e:
                 print(f"Error processing frame {frame_count}: {str(e)}")
@@ -75,7 +79,7 @@ def detect_face_in_video(video_path, reference_encoding, frame_skip=30, threshol
 
     video.release()
     print(f"Video analysis complete, processed {frame_count} frames, face found: {face_found}")
-    return face_found
+    return face_found, match_frame, match_distance
 
 @app.route("/detect", methods=["POST"])
 def detect():
@@ -131,12 +135,21 @@ def detect():
         # Use a less strict threshold (higher value = more permissive)
         threshold = 0.55
         print(f"Running face detection with threshold {threshold}")
-        found = detect_face_in_video(video_path, reference_encoding, threshold=threshold)
+        found, match_frame, match_distance = detect_face_in_video(video_path, reference_encoding, threshold=threshold)
 
-        return jsonify({
+        response_data = {
             "face_present": found,
             "video_url": video_url
-        })
+        }
+        
+        # Add match details if face was found
+        if found:
+            response_data["match_frame"] = match_frame
+            response_data["match_distance"] = match_distance
+            # Calculate time in seconds (assuming 30fps)
+            response_data["match_time_seconds"] = round(match_frame / 30, 2)
+
+        return jsonify(response_data)
 
     except Exception as e:
         print(f"Error in detect endpoint: {str(e)}")
