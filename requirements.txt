@@ -1,0 +1,7 @@
+setuptools
+distribute
+flask
+face_recognition
+face_recognition_models
+opencv-python
+yt-dlp
