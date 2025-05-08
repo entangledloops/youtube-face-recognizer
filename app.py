@@ -4,9 +4,13 @@ import face_recognition
 import cv2
 import numpy as np
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 from yt_dlp import YoutubeDL
 
 app = Flask(__name__)
+# Enable CORS for all routes and origins
+CORS(app)
+
 UPLOAD_DIR = "temp"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
@@ -95,12 +99,10 @@ def detect():
     image_path = os.path.join(UPLOAD_DIR, f"{temp_id}.jpg")
 
     try:
+        # First process the reference image
         image_file.save(image_path)
-        print(f"Downloading video from: {video_url}")
-        download_video(video_url, video_path)
-        print("Video download complete")
-
-        # Load reference image and find face encodings
+        reference_encoding = None
+        
         print("Processing reference image")
         try:
             # Load the image as RGB (face_recognition expects RGB)
@@ -132,6 +134,11 @@ def detect():
             print(f"Error in reference image processing: {str(e)}")
             return jsonify({"error": f"Error processing reference image: {str(e)}"}), 500
 
+        # Only download the video if we successfully got a face encoding
+        print(f"Downloading video from: {video_url}")
+        download_video(video_url, video_path)
+        print("Video download complete")
+
         # Use a less strict threshold (higher value = more permissive)
         threshold = 0.55
         print(f"Running face detection with threshold {threshold}")
@@ -159,7 +166,10 @@ def detect():
         # Cleanup
         for f in [video_path, image_path]:
             if os.path.exists(f):
-                os.remove(f)
+                try:
+                    os.remove(f)
+                except:
+                    pass
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", debug=True, port=5005)

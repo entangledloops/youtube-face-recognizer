@@ -1,6 +1,6 @@
 setuptools
-distribute
 flask
+flask-cors
 face_recognition
 face_recognition_models
 opencv-python
