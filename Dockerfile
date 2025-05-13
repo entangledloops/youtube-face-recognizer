@@ -21,6 +21,7 @@ RUN apt-get update && apt-get install -y \
     libswscale-dev \
     libx264-dev \
     libgl1-mesa-glx \
+    ffmpeg \
     git \
     && rm -rf /var/lib/apt/lists/*
 
